@@ -17,6 +17,7 @@
 #define USING_LOG_PREFIX SQL_DAS
 #include "rust/config.h"
 #include "sql/das/iter/ob_das_hnsw_scan_iter.h"
+#include "sql/das/iter/vector_feedback_decay.h"
 #include "share/rc/ob_server_runtime.h"
 #include "data_plane/blocksstable/ob_datum_row.h"
 #include "sql/engine/ob_physical_plan.h"
@@ -793,18 +794,18 @@ int ObDASHNSWScanIter::updata_vec_exec_ctx(ObPlanStat* plan_stat)
       }
       ATOMIC_INC(&(plan_stat->vec_index_exec_ctx_.record_count_));
     } else {
-      double iter_time = plan_stat->vec_index_exec_ctx_.iter_filter_chosen_times_;
-      double pre_time = plan_stat->vec_index_exec_ctx_.pre_filter_chosen_times_;
-      double in_time = plan_stat->vec_index_exec_ctx_.in_filter_chosen_times_;
-      iter_time = std::log(iter_time) * DECAY_FACTOR;
-      pre_time = std::log(pre_time) * DECAY_FACTOR;
-      in_time = std::log(in_time) * DECAY_FACTOR;
+      const int64_t iter_time = decay_vector_path_count(
+          plan_stat->vec_index_exec_ctx_.iter_filter_chosen_times_, DECAY_FACTOR);
+      const int64_t pre_time = decay_vector_path_count(
+          plan_stat->vec_index_exec_ctx_.pre_filter_chosen_times_, DECAY_FACTOR);
+      const int64_t in_time = decay_vector_path_count(
+          plan_stat->vec_index_exec_ctx_.in_filter_chosen_times_, DECAY_FACTOR);
       FLOG_INFO("begin to reset plan stat filter path", K(plan_stat->vec_index_exec_ctx_.record_count_),
       K(plan_stat->vec_index_exec_ctx_.cur_path_), K(vec_idx_try_path_), K(adaptive_ctx_), K(ret));
       ATOMIC_STORE(&(plan_stat->vec_index_exec_ctx_.record_count_), 0);
-      ATOMIC_STORE(&(plan_stat->vec_index_exec_ctx_.iter_filter_chosen_times_), static_cast<int64_t>(iter_time));
-      ATOMIC_STORE(&(plan_stat->vec_index_exec_ctx_.pre_filter_chosen_times_), static_cast<int64_t>(pre_time));
-      ATOMIC_STORE(&(plan_stat->vec_index_exec_ctx_.in_filter_chosen_times_), static_cast<int64_t>(in_time));
+      ATOMIC_STORE(&(plan_stat->vec_index_exec_ctx_.iter_filter_chosen_times_), iter_time);
+      ATOMIC_STORE(&(plan_stat->vec_index_exec_ctx_.pre_filter_chosen_times_), pre_time);
+      ATOMIC_STORE(&(plan_stat->vec_index_exec_ctx_.in_filter_chosen_times_), in_time);
       ATOMIC_STORE(&(plan_stat->vec_index_exec_ctx_.cur_path_), static_cast<uint8_t>(vec_idx_try_path_));
     }
   }

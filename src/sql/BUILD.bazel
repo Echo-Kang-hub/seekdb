@@ -135,6 +135,14 @@ cc_library(
     visibility = ["//src/sql:__subpackages__"],
 )
 
+# Keep feedback arithmetic available to a focused test without SQL runtime.
+cc_library(
+    name = "vector_feedback_decay",
+    hdrs = ["das/iter/vector_feedback_decay.h"],
+    strip_include_prefix = "/src",
+    visibility = ["//unittest/sql:__pkg__"],
+)
+
 # SQL's external seam owns only headers actually reached from outside SQL.
 # Semantic subpackages own their physical files and contribute header-only
 # targets; no implementation target is pulled into this interface.

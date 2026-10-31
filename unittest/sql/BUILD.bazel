@@ -1,0 +1,14 @@
+load("@rules_cc//cc:cc_test.bzl", "cc_test")
+
+package(default_testonly = True)
+
+cc_test(
+    name = "test_vector_feedback_decay",
+    size = "small",
+    srcs = ["test_vector_feedback_decay.cpp"],
+    linkstatic = True,
+    deps = [
+        "//bazel/third_party:gtest",
+        "//src/sql:vector_feedback_decay",
+    ],
+)
